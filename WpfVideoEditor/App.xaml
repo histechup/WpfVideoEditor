@@ -4,6 +4,12 @@
              xmlns:local="clr-namespace:WpfVideoEditor"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <Style x:Key="DarkMode" TargetType="{x:Type Control}">
+            <Setter Property="Foreground" Value="#D4D1D1" />
+            <!--<Setter Property="FontSize" Value="14" />-->
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+        
     </Application.Resources>
 </Application>

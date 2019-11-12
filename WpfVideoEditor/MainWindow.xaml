@@ -4,9 +4,168 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfVideoEditor"
+        xmlns:localConverter="clr-namespace:WpfVideoEditor.Converters"
+        xmlns:controls="clr-namespace:WpfVideoEditor.Controls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="WpfVideoEditor" Height="720" Width="1280"
+        x:Name="ThisMainWindow"
+        AllowDrop="True" Drop="MediaElement_Drop" DragOver="MediaElement_DragOver"
+        >
+    <Window.Resources>
+        <localConverter:MediaContainerFormatValueConverter x:Key="containerFormatConverter" />
+        <localConverter:MediaVideoCodecValueConverter x:Key="videoCodecConverter" />
+        <localConverter:MediaAudioCodecValueConverter x:Key="audioCodecConverter" />
+    </Window.Resources>
     <Grid>
-
+        <Grid.RowDefinitions>
+            <!-- Window content -->
+            <RowDefinition Height="*" />
+            <!-- Status bar -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <!-- Info sidebar left -->
+                <ColumnDefinition Width="120" />
+                <!-- Splitter -->
+                <ColumnDefinition Width="Auto" />
+                <!-- Main window content -->
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0" x:Name="cInfoSidebar">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <controls:FileInfoControl Grid.Row="0" x:Name="cFileInfo" DataContext="{Binding ElementName=ThisMainWindow, Path=CurrentFile}" />
+                <ListBox Grid.Row="1" x:Name="cFilesList" SelectionMode="Single" SelectionChanged="CFilesList_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True"></ListBox>
+                <GroupBox Grid.Row="2" Header="Settings">
+                    <StackPanel>
+                        <GroupBox Header="Output Format">
+                            <ComboBox SelectedIndex="{Binding ElementName=ThisMainWindow, Path=SettingContainerFormat, Converter={StaticResource containerFormatConverter}}">
+                                <ComboBoxItem IsSelected="True">From source</ComboBoxItem>
+                                <ComboBoxItem>MP4</ComboBoxItem>
+                                <ComboBoxItem>MKV</ComboBoxItem>
+                                <ComboBoxItem>WEBM</ComboBoxItem>
+                            </ComboBox>
+                        </GroupBox>
+                        <GroupBox Header="Video Codec">
+                            <ComboBox SelectedIndex="{Binding ElementName=ThisMainWindow, Path=SettingVideoCodec, Converter={StaticResource videoCodecConverter}}">
+                                <ComboBoxItem IsSelected="True">From source</ComboBoxItem>
+                                <ComboBoxItem>H265</ComboBoxItem>
+                                <ComboBoxItem>H264</ComboBoxItem>
+                                <ComboBoxItem>VP9</ComboBoxItem>
+                                <ComboBoxItem ToolTip="EXPERIMENTAL AV1 support in ffmpeg is still experimental. The encoding speed is very slow. It may be possible to integrate other encoders to improve this.">AV1</ComboBoxItem>
+                                <ComboBoxItem ToolTip="Copy video without re-encoding (may be inaccurate on trim start and end depending on the source encode)">Copy</ComboBoxItem>
+                                <ComboBoxItem ToolTip="No video">Drop</ComboBoxItem>
+                            </ComboBox>
+                        </GroupBox>
+                        <GroupBox Header="Audio Codec">
+                            <StackPanel>
+                                <ComboBox SelectedIndex="{Binding ElementName=ThisMainWindow, Path=SettingAudioCodec, Converter={StaticResource audioCodecConverter}}">
+                                    <ComboBoxItem IsSelected="True">From source</ComboBoxItem>
+                                    <ComboBoxItem>AAC</ComboBoxItem>
+                                    <ComboBoxItem>Opus</ComboBoxItem>
+                                    <ComboBoxItem>MP3</ComboBoxItem>
+                                    <ComboBoxItem ToolTip="Copy audio without re-encoding (may be inaccurate on trim start and end depending on the source encode)">Copy</ComboBoxItem>
+                                    <ComboBoxItem ToolTip="No audio">Drop</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </GroupBox>
+            </Grid>
+            <GridSplitter Grid.Column="1" Width="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" />
+            <Grid Grid.Column="2" x:Name="cMainWindowContent">
+                <Grid.RowDefinitions>
+                    <!-- Media element -->
+                    <RowDefinition Height="*" />
+                    <!-- Splitter -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Controls -->
+                    <RowDefinition Height="300" />
+                </Grid.RowDefinitions>
+                <MediaElement Grid.Row="0" x:Name="cMediaElement" LoadedBehavior="Manual" IsMuted="{Binding ElementName=ThisMainWindow, Path=IsPlayerMuted}" Volume="{Binding ElementName=ThisMainWindow, Path=PlayerVolume}" />
+                <GridSplitter Grid.Row="1" Height="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" />
+                <Grid Grid.Row="2" x:Name="cWorkControls">
+                    <Grid.RowDefinitions>
+                        <!-- Player button controls -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Position slider -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Trim -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Clips list -->
+                        <RowDefinition Height="*" />
+                        <!-- Clips button controls -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <WrapPanel Grid.Row="0" Grid.Column="0" x:Name="cPlayerControls" HorizontalAlignment="Center">
+                        <Button x:Name="btnJumpStart" Click="BtnJumpStart_Click" MinWidth="60" Margin="4,0" Padding="8,2">⏮</Button>
+                        <Button Name="btnSkipBackward" Click="BtnSkipBackward_Click" MinWidth="60" Margin="4,0" Padding="8,2">⏪</Button>
+                        <Button Name="btnPlayPause" Click="BtnPlayPause_Click" MinWidth="60" Margin="4,0" Padding="8,2">⏯</Button>
+                        <Button Name="btnSkipForward" Click="BtnSkipForward_Click" MinWidth="60" Margin="4,0" Padding="8,2">⏩</Button>
+                        <StackPanel Margin="20,0,0,0" Orientation="Horizontal">
+                            <Button Name="btnStop" Click="BtnStop_Click" MinWidth="60" Margin="4,0" Padding="8,2">⏹</Button>
+                            <CheckBox Margin="6,0" VerticalAlignment="Center" IsChecked="{Binding ElementName=ThisMainWindow, Path=IsPlayerRepeatOn}" ToolTip="Repeat (at the end of the trim playback, jump back to start and continue playback)">🔁</CheckBox>
+                            <CheckBox Margin="6,0" VerticalAlignment="Center" IsChecked="{Binding ElementName=ThisMainWindow, Path=IsPlayerMuted}" ToolTip="Mute audio playback">🔇</CheckBox>
+                            <Label VerticalAlignment="Center">🔊</Label>
+                            <Slider Width="64" VerticalAlignment="Center" Value="{Binding ElementName=ThisMainWindow, Path=PlayerVolume}" Minimum="0.0" Maximum="1.0" SmallChange="0.01" LargeChange="0.1" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <GroupBox Grid.Row="1" Grid.Column="0" Header="Playback Position [ms]">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Row="0" Grid.Column="0" MinWidth="80" Text="{Binding ElementName=ThisMainWindow, Path=CurrentPosMs, StringFormat=F0}" />
+                            <Slider Grid.Row="0" Grid.Column="1" x:Name="cPosition" ToolTip="Current playback position" Value="{Binding ElementName=ThisMainWindow, Path=CurrentPosMs, Mode=OneWay}" Minimum="{Binding ElementName=ThisMainWindow, Path=TrimMinMs, Mode=OneWay}" Maximum="{Binding ElementName=ThisMainWindow, Path=TrimMaxMs, Mode=OneWay}" />
+                            <Label Grid.Row="0" Grid.Column="2" Target="{Binding ElementName=cPositionMax}">Maximum:</Label>
+                            <TextBox Grid.Row="0" Grid.Column="3" x:Name="cPositionMax" MinWidth="80" IsReadOnly="True" Text="{Binding ElementName=cTo, Path=Maximum, StringFormat=F0}" VerticalAlignment="Center" />
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Grid.Row="2" Grid.Column="0" Header="Trim">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Row="0" Grid.Column="0">From [ms]</Label>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="cFromTextBox" MinWidth="80" Text="{Binding ElementName=cFrom, Path=Value, StringFormat=F0}" VerticalAlignment="Center" IsReadOnly="True" />
+                            <Slider Grid.Row="0" Grid.Column="2" Margin="10,0" VerticalAlignment="Center" x:Name="cFrom" ToolTip="Start of video trim to work with" SmallChange="0.1" LargeChange="10" Value="{Binding ElementName=ThisMainWindow, Path=TrimMinMs, Mode=TwoWay}" Maximum="{Binding ElementName=ThisMainWindow, Path=TrimMaxMs, Mode=OneWay}" />
+                            <Label Grid.Row="0" Grid.Column="3">To [ms]</Label>
+                            <TextBox Grid.Row="0" Grid.Column="4" x:Name="cToTextBox" MinWidth="80" Text="{Binding ElementName=cTo, Path=Value, StringFormat=F0}" VerticalAlignment="Center" IsReadOnly="True" />
+                            <Slider Grid.Row="0" Grid.Column="5" Margin="10,0" VerticalAlignment="Center" x:Name="cTo" ToolTip="End of video trim to work with" SmallChange="0.1" LargeChange="10" Value="{Binding ElementName=ThisMainWindow, Path=TrimMaxMs, Mode=TwoWay, NotifyOnSourceUpdated=True}" Minimum="{Binding ElementName=ThisMainWindow, Path=TrimMinMs, Mode=OneWay}" />
+                            <Button Grid.Row="0" Grid.Column="6" x:Name="btnExport" Click="BtnExport_Click" Padding="4">Export</Button>
+                        </Grid>
+                    </GroupBox>
+                    <controls:ClipsListControl Grid.Row="3" x:Name="cClipsList" DataContext="{Binding ElementName=ThisMainWindow, Path=Clips}"
+                                       Play="CClipsList_Play"
+                                       Export="CClipsList_Export"
+                                       SetBegin="CClipsList_SetBegin"
+                                       SetEnd="CClipsList_SetEnd"
+                                       />
+                    <StackPanel Grid.Row="4" Orientation="Horizontal">
+                        <Button MinWidth="60" Margin="4,0" Padding="8,2" Click="BtnAddClip_Click">Add</Button>
+                        <Button MinWidth="60" Margin="4,0" Padding="8,2" Click="BtnAddClip5s_Click">Add 5s</Button>
+                        <Button MinWidth="60" Margin="4,0" Padding="8,2" Click="BtnExportAllClips_Click" ToolTip="Export all clips">Export all</Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+        <StatusBar Grid.Row="1">
+            <StatusBarItem x:Name="sFilename" />
+            <StatusBarItem x:Name="sFileSize" />
+            <StatusBarItem x:Name="sStatus" />
+        </StatusBar>
     </Grid>
 </Window>
